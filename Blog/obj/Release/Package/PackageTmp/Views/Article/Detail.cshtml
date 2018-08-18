@@ -1,0 +1,150 @@
+﻿@{
+    Layout = "~/Views/Shared/Blog.cshtml";
+}
+@section css{
+    <link href="~/Content/jquery.comment.min.css" rel="stylesheet" type="text/css" />
+    <link href="~/Content/prettify.min.css" rel="stylesheet" />
+    <style type="text/css">
+        #commentSection {
+            margin-top: 100px;
+        }
+
+        .login_tips {
+            background-image: url('/Images/add_comment_ico.png');
+            background-repeat: no-repeat;
+            margin-top: 10px;
+            padding: 0px 0px 10px 25px;
+            font-weight: bold;
+        }
+
+            .login_tips a {
+                text-decoration: underline;
+            }
+
+        a:hover {
+            color: black;
+        }
+
+        a:visited {
+            color: rgb(67, 113, 166);
+        }
+
+        a:link, a:active {
+            color: rgb(67, 113, 166);
+        }
+
+        #jiathis {
+            margin-top: 50px;
+        }
+        .prenextlink {
+            margin-top:50px;
+        }
+    </style>
+}
+<div class="row-fluid">
+    <div class="span3">
+    </div>
+    <div class="span9" id="articlecontent">
+        <div class="article-detail" id="detail">
+            <img id="loadingimg" src="/Images/loading.gif" style="display: none;" />
+        </div>
+       <!-- JiaThis Button BEGIN -->
+       <div class="jiathis_style" id="jiathis">
+	        <span class="jiathis_txt">分享到：</span>
+        	<a class="jiathis_button_tsina">新浪微博</a>
+	        <a class="jiathis_button_tqq">腾讯微博</a>
+	        <a class="jiathis_button_qzone">QQ空间</a>
+        	<a href="http://www.jiathis.com/share" class="jiathis jiathis_txt jiathis_separator jtico jtico_jiathis" target="_blank">更多</a>
+	        <a class="jiathis_counter_style"></a>
+       </div>
+       <!-- JiaThis Button END -->
+       <div id="commentSection">
+            @if (HttpContext.Current.User.Identity.IsAuthenticated)
+            { 
+                <input type="hidden" value="false" class="hiddeninput" />
+            }
+            else
+            {
+                <input type="hidden" value="true" class="hiddeninput" />
+                <div class="login_tips">注册用户登录后才能发表评论，请 <a rel="nofollow" href="/Account/Login" class="underline";">登录</a> 或 <a rel="nofollow" href="/Account/Register" class="underline">注册</a>，<a href="/">访问</a>网站首页。</div>
+            }
+       </div>
+    </div>
+</div>
+<input type="hidden" value="@ViewBag.aid" id="aid" />
+<input type="hidden" value="@HttpContext.Current.User.Identity.Name" id="commentusername" />
+<!-- UJian Button BEGIN -->
+<a href="http://www.ujian.cc" style="border:0;"><img src="http://img.ujian.cc/pixel.png" alt="友荐云推荐" style="border:0;padding:0;margin:0;" /></a>
+<!-- UJian Button END -->
+@section scriptsahead{
+    <script src="~/Scripts/prettify.min.js"></script>
+    <script type="text/javascript">
+        $(function () {
+            var loadarticle = function (aid) {
+                $.ajax({
+                    type: "post",
+                    url: "/Article/Detailajax?aid=" + aid,
+                    beforeSend: function () { $("#loadingimg").css({ 'margin-left': "380px" }).show() },
+                    success: function (data) {
+                        $("#loadingimg").hide();
+                        var uname = $("#uname").val();
+                        var str = "";
+                        str += "<h3>" + data.Title + "</h3>";
+                        str += "<div style=\"margin-bottom:60px;\"><p class=\"right\">创建日期：" + data.CreateTime + " 浏览数：" + data.ViewNum + " 评论数：" + data.CommentNum + "</div>";
+                        str += data.Content;
+                        str += "<div class=\"prenextlink\">";
+                        if (data.pre.id != -1)
+                            str += "<p>上一篇：<a href=\"/" + uname + "/Article/Detail/" + data.pre.id + "\">" + data.pre.title + "</a></p>"
+                        if (data.next.id != 0)
+                            str += "<p>下一篇：<a href=\"/" + uname + "/Article/Detail/" + data.next.id + "\">" + data.next.title + "</a></p>"
+                        str += "</div>";
+                        $("#detail").append(str);
+                        $(".prettyprint").addClass("linenums");
+                        window.prettyPrint && prettyPrint();
+                    }
+                });
+            };
+
+            var aid = $("#aid").val();
+            loadarticle(aid);
+        })
+    </script>
+}
+@section scripts{
+    <script src="~/Scripts/jquery.comment.min.js" type="text/javascript"></script>
+    <script type="text/javascript">
+        $(function () {
+            var aid = $("#aid").val();
+            var commentusername = $("#commentusername").val();
+            var $hide = $(".hiddeninput").val();
+            var readonly;
+            if ($hide == "true") {
+                readonly = true;
+            } else {
+                readonly = false;
+            }
+
+            $("#commentSection").comments({
+                getCommentsUrl: "/Article/GetComments?aid=" + aid + "&commentusername=" + commentusername,
+                postCommentUrl: "/Article/PostComment?aid=" + aid + "&commentusername=" + commentusername,
+                deleteCommentUrl: "/Article/DeleteComment?aid=" + aid + "&commentusername=" + commentusername,
+                displayAvatar: true,
+                readOnly: readonly,
+                callback: {
+                    beforDelete: function () {
+                        return confirm("确定删除？?");
+                    }
+                },
+                localization: {
+                    headerText: "评论",
+                    commentPlaceHolderText: "呃！说点什么吧！（150字以内）",
+                    sendButtonText: "发送",
+                    replayButtonText: "回复",
+                    deleteButtonText: "删除"
+                }
+            });
+        });
+    </script>
+    <script type="text/javascript" src="http://v3.jiathis.com/code/jia.js?uid=1369396845872467" charset="utf-8"></script>
+    <script type="text/javascript" src="http://v1.ujian.cc/code/ujian.js?type=slide&num=3&btn=3&fade=1"></script>
+}
